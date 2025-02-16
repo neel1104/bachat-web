@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, Pencil } from 'lucide-react';
 import Header from '../components/header';
 
@@ -12,7 +12,12 @@ interface Transaction {
 }
 
 const TransactionList = () => {
-  const transactions: Transaction[] = JSON.parse(localStorage.getItem("transactions") || "[]");
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    const transactions = JSON.parse(localStorage.getItem("transactions") || "[]");
+    setTransactions(transactions);
+  }, []);
 
   const handleEditTransaction = (id: string) => {
     console.log('Edit transaction:', id);
