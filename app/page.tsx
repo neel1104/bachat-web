@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -8,38 +8,72 @@ import {
 import { TrendingUp, DollarSign, Calendar, AlertCircle } from 'lucide-react';
 import Header from './components/header';
 
+interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  tags: string[];
+}
+
 const FinancialInsights = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
 
-  // Sample monthly spending data
-  const monthlySpending = [
-    { category: 'Groceries', current: 600, previous: 500 },
-    { category: 'Dining', current: 300, previous: 250 },
-    { category: 'Transportation', current: 200, previous: 180 },
-    { category: 'Entertainment', current: 150, previous: 200 },
-    { category: 'Utilities', current: 250, previous: 240 },
-    { category: 'Shopping', current: 400, previous: 350 }
-  ];
+  useEffect(() => {
+    const transactionsFromStorage = JSON.parse(localStorage.getItem("transactions") || "[]");
+    setTransactions(transactionsFromStorage);
+  }, []);
 
-  // Calculate totals for pie chart
-  const totalSpending = monthlySpending.reduce((sum, item) => sum + item.current, 0);
-  const pieChartData = monthlySpending.map(item => ({
-    name: item.category,
-    value: item.current
-  }));
+  // Process transactions for pie chart
+  const pieChartData = React.useMemo(() => {
+    const categoryTotals = transactions.reduce((acc: { [key: string]: number }, transaction) => {
+      // Use the first tag as the category
+      const category = transaction.tags[0] || 'Uncategorized';
+      acc[category] = (acc[category] || 0) + transaction.amount;
+      return acc;
+    }, {});
+
+    return Object.entries(categoryTotals).map(([name, value]) => ({
+      name,
+      value: Math.round(Math.abs(value)) // Use absolute value to handle negative amounts
+    }));
+  }, [transactions]);
+
+  // Calculate total spending from actual transactions
+  const totalSpending = React.useMemo(() => 
+    transactions.reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0),
+    [transactions]
+  );
 
   // Color palette for charts
   const COLORS = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0', '#607D8B'];
 
   // Calculate interesting facts
-  const facts = monthlySpending.map(item => {
-    const percentChange = ((item.current - item.previous) / item.previous) * 100;
-    return {
-      category: item.category,
-      percentChange: percentChange,
-      message: `You spent ${Math.abs(percentChange).toFixed(1)}% ${percentChange > 0 ? 'more' : 'less'} on ${item.category.toLowerCase()} this month`
-    };
-  }).filter(fact => Math.abs(fact.percentChange) > 10);
+  // const facts = transactions.map(item => {
+  //   const percentChange = ((item.amount) / Math.abs(item.amount)) * 100;
+  //   return {
+  //     category: item.description,
+  //     percentChange: percentChange,
+  //     message: `You spent ${Math.abs(percentChange).toFixed(1)}% ${percentChange > 0 ? 'more' : 'less'} on ${item.description.toLowerCase()}`
+  //   };
+  // }).filter(fact => Math.abs(fact.percentChange) > 10);
+
+  // Process transactions for bar chart
+  const barChartData = React.useMemo(() => {
+    const categoryTotals = transactions.reduce((acc: { [key: string]: number }, transaction) => {
+      const category = transaction.tags[0] || 'Uncategorized';
+      acc[category] = (acc[category] || 0) + Math.abs(transaction.amount);
+      return acc;
+    }, {});
+
+    return Object.entries(categoryTotals).map(([category, amount]) => ({
+      category,
+      amount: Math.round(amount)
+    }));
+  }, [transactions]);
+
+  const topCategory = transactions.length > 0 ? barChartData.sort((a, b) => b.amount - a.amount)[0].category : 'No transactions';
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -79,7 +113,9 @@ const FinancialInsights = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Biggest Category</p>
-              <p className="text-xl font-bold">Groceries</p>
+              <p className="text-xl font-bold">
+                {topCategory}
+              </p>
             </div>
           </div>
         </div>
@@ -102,14 +138,13 @@ const FinancialInsights = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h2 className="text-lg font-semibold mb-4">Monthly Comparison</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlySpending}>
+            <BarChart data={barChartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="category" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="previous" name="Last Month" fill="#94a3b8" />
-              <Bar dataKey="current" name="This Month" fill="#4ade80" />
+              <Bar dataKey="amount" name="Amount" fill="#16a34a" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -140,13 +175,13 @@ const FinancialInsights = () => {
       </div>
 
       {/* Insights Box */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
+      {/* <div className="bg-white p-6 rounded-lg shadow-sm border">
         <div className="flex items-center gap-2 mb-4">
           <AlertCircle className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-semibold">Interesting Facts</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {facts.map((fact, index) => (
+           {facts.map((fact, index) => (
             <div
               key={index}
               className="p-4 rounded-lg bg-blue-50 border border-blue-100"
@@ -155,7 +190,7 @@ const FinancialInsights = () => {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
