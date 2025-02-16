@@ -19,9 +19,9 @@ export default function Header() {
             <Link href="/"><span className="text-xl font-bold">WalletWise</span></Link>
           </div>
           <nav className="flex gap-6">
-            <Link href="/" className={getLinkStyle("/")}>Import</Link>
-            <Link href="/transactions" className={getLinkStyle("/transactions")}>Transactions</Link>
-            {/* <Link href="/" className={getLinkStyle("/bulk-edit")}>Bulk Edit</Link> */}
+            <Link href="/" className={getLinkStyle("/")}>Dashboard</Link>
+            <Link href="/bulk-import" className={getLinkStyle("/bulk-import")}>Import</Link>
+            <Link href="/transactions" className={getLinkStyle("/transactions")}>View & Manage Transactions</Link>
           </nav>
         </div>
         <div className="flex gap-4">

@@ -1,192 +1,163 @@
 'use client';
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'
-import { Trash } from 'lucide-react';
+import {
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer
+} from 'recharts';
+import { TrendingUp, DollarSign, Calendar, AlertCircle } from 'lucide-react';
 import Header from './components/header';
-interface Transaction {
-  id: string;
-  date: string;
-  amount: number;
-  type: string;
-  category: string;
-  description: string;
-}
 
-const Home = () => {
-  const router = useRouter();
-  const [csvData, setCsvData] = useState('');
-  const [rows, setRows] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<{ [key: string]: number }>({});
-  const transactionAttributes = ["id", "date", "amount", "type", "category", "description"];
+const FinancialInsights = () => {
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
 
-  const handleDataPaste = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setCsvData(e.target.value);
-  };
+  // Sample monthly spending data
+  const monthlySpending = [
+    { category: 'Groceries', current: 600, previous: 500 },
+    { category: 'Dining', current: 300, previous: 250 },
+    { category: 'Transportation', current: 200, previous: 180 },
+    { category: 'Entertainment', current: 150, previous: 200 },
+    { category: 'Utilities', current: 250, previous: 240 },
+    { category: 'Shopping', current: 400, previous: 350 }
+  ];
 
-  const handleParseData = () => {
-    const separator = csvData.includes('\t') ? '\t' : ',';
-    const rows = csvData.split('\n').map(row => row.split(separator).map(col => col.trim().replace(/^"|"$/g, '')));
-    setRows(rows);
-  };
+  // Calculate totals for pie chart
+  const totalSpending = monthlySpending.reduce((sum, item) => sum + item.current, 0);
+  const pieChartData = monthlySpending.map(item => ({
+    name: item.category,
+    value: item.current
+  }));
 
-  const handleRemoveTransaction = (idx: number) => {
-    const newRows = [...rows];
-    newRows.splice(idx + 1, 1);
-    setRows(newRows);
-  };
+  // Color palette for charts
+  const COLORS = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0', '#607D8B'];
 
-  const handleImportTransactions = () => {
-    const transactions: Transaction[] = [];
-    for (const transaction of previewTransactions) {
-      const newTransaction = {
-        id: transaction.id,
-        date: transaction.date,
-        amount: Number(transaction.amount),
-        type: transaction.type,
-        category: transaction.category,
-        description: transaction.description
-      }
-      transactions.push(newTransaction);
-    }
-    // save transactions to local storage
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-    // redirect to transactions page
-    router.push("/transactions");
-  };
-
-  const previewTransactions: { [key: string]: string }[] = [];
-  if (Object.keys(mapping).length > 0) {
-    for (const row of rows.slice(1)) {
-      const previewTransaction: { [key: string]: string } = {};
-      for (const attr of transactionAttributes) {
-        previewTransaction[attr] = row[mapping[attr]];
-      }
-      previewTransactions.push(previewTransaction);
-    }
-  }
+  // Calculate interesting facts
+  const facts = monthlySpending.map(item => {
+    const percentChange = ((item.current - item.previous) / item.previous) * 100;
+    return {
+      category: item.category,
+      percentChange: percentChange,
+      message: `You spent ${Math.abs(percentChange.toFixed(1))}% ${percentChange > 0 ? 'more' : 'less'} on ${item.category.toLowerCase()} this month`
+    };
+  }).filter(fact => Math.abs(fact.percentChange) > 10);
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       <Header />
-
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Data Input Area</h2>
-        <p className="text-gray-600 mb-4">
-          Please paste your CSV or TSV data below. Ensure the data is properly formatted for accurate parsing.
-        </p>
-        <textarea
-          className="w-full h-40 p-4 border rounded-md mb-4"
-          placeholder="Paste your data here..."
-          value={csvData}
-          onChange={handleDataPaste}
-        />
-        <button
-          onClick={handleParseData}
-          className="px-4 py-2 bg-green-600 text-white rounded-md float-right"
-        >
-          Parse Data
-        </button>
-      </div>
-
-      <div className="mt-16">
-        <h3 className="text-lg font-semibold mb-4">Map Columns to Transaction</h3>
-        <div className="border rounded-md overflow-hidden">
-          <table className="w-full table-fixed">
-            <thead className="bg-gray-50">
-              <tr>
-                {transactionAttributes.map((attr) => (
-                  <th key={attr} className="py-3 basis-0 text-left text-sm font-medium text-gray-600">
-                    {attr}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              <tr>
-                {
-                  rows.length > 0 ?
-                    transactionAttributes.map((attr) => (
-                      <td key={attr}>
-                        <select onChange={(e) => setMapping({ ...mapping, [attr]: parseInt(e.target.value) })}>
-                          {
-                            ["-", ...rows[0]].map((col, idx) => (
-                              <option key={idx} value={idx - 1} >{col}</option>
-                            ))
-                          }
-                        </select>
-                      </td>
-                    ))
-                    :
-                    <td colSpan={6} className="text-center">Paste your transaction data to get started</td>
-                }
-              </tr>
-            </tbody>
-          </table>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Financial Insights</h1>
+        <div className="flex gap-4">
+          <select
+            className="px-4 py-2 border rounded-md"
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+          >
+            <option value="month">This Month</option>
+            <option value="quarter">This Quarter</option>
+            <option value="year">This Year</option>
+          </select>
         </div>
       </div>
 
-      <div className="mt-16">
-        <h3 className="text-lg font-semibold mb-4">Data Preview</h3>
-        <div className="border rounded-md overflow-hidden">
-          <table className="w-full table-fixed">
-            <thead className="bg-gray-50">
-              <tr>
-                {transactionAttributes.map((attr) => (
-                  <th key={attr} className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-                    {attr}
-                  </th>
-                ))}
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {
-                previewTransactions.length > 0 ?
-                  previewTransactions.map((transaction, idx) => (
-                    <tr key={transaction.id}>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {transaction.id}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {transaction.date}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        ${parseFloat(transaction.amount).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {transaction.type}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {transaction.category}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {transaction.description}
-                      </td>
-                      <td className="px-6 py-4">
-                        <button onClick={() => handleRemoveTransaction(idx)}>
-                          <Trash className="size-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                  :
-                  <tr>
-                    <td colSpan={6} className="text-center">Select columns to map to transaction attributes to see preview</td>
-                  </tr>
-              }
-            </tbody>
-          </table>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-100 rounded-full">
+              <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Total Spending</p>
+              <p className="text-xl font-bold">${totalSpending.toLocaleString()}</p>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-end gap-4 mt-4">
-          <button className="px-4 py-2 bg-green-600 text-white rounded-md" onClick={handleImportTransactions}>
-            Import
-          </button>
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-100 rounded-full">
+              <TrendingUp className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Biggest Category</p>
+              <p className="text-xl font-bold">Groceries</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-purple-100 rounded-full">
+              <Calendar className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Most Active Day</p>
+              <p className="text-xl font-bold">Fridays</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Monthly Comparison Bar Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h2 className="text-lg font-semibold mb-4">Monthly Comparison</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={monthlySpending}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="category" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="previous" name="Last Month" fill="#94a3b8" />
+              <Bar dataKey="current" name="This Month" fill="#4ade80" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Spending Distribution Pie Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h2 className="text-lg font-semibold mb-4">Spending Distribution</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={pieChartData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {pieChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Insights Box */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertCircle className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-semibold">Interesting Facts</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {facts.map((fact, index) => (
+            <div
+              key={index}
+              className="p-4 rounded-lg bg-blue-50 border border-blue-100"
+            >
+              <p className="text-sm text-blue-800">{fact.message}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-export default Home;
+export default FinancialInsights;
