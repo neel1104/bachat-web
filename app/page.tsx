@@ -37,7 +37,7 @@ const FinancialInsights = () => {
     return {
       category: item.category,
       percentChange: percentChange,
-      message: `You spent ${Math.abs(percentChange.toFixed(1))}% ${percentChange > 0 ? 'more' : 'less'} on ${item.category.toLowerCase()} this month`
+      message: `You spent ${Math.abs(percentChange).toFixed(1)}% ${percentChange > 0 ? 'more' : 'less'} on ${item.category.toLowerCase()} this month`
     };
   }).filter(fact => Math.abs(fact.percentChange) > 10);
 
