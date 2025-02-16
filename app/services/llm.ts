@@ -1,5 +1,3 @@
-import { generateText } from 'ai';
-import { createOpenAI as createGroq} from '@ai-sdk/openai';
 import { headerRowParserPrompt } from './prompts';
 
 interface Transaction {
@@ -10,15 +8,6 @@ interface Transaction {
 
 export async function parseTransactionsWithLLM(text: string): Promise<Transaction[]> {
   try {
-    const groq = createGroq({
-        baseURL: 'http://localhost:11434',
-        // apiKey: process.env.GROQ_API_KEY,
-      });
-      
-      const { text } = await generateText({
-        model: groq('llama3.2'),
-        prompt: 'What is love?',
-      });
     const headerRow = text.split('\n')[0];
     const response = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
