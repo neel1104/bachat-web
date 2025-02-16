@@ -324,7 +324,7 @@ const TransactionList = () => {
                                                 <span key={tag} className={`rounded-full bg-gray-100 text-sm font-medium ${getTagColor(tag)}`}>
                                                     {tag}
                                                 </span>
-                                            )), <button className="px-4 py-1"><Check className="w-4 h-4" /></button>] :
+                                            )), <button key="check" className="px-4 py-1"><Check className="w-4 h-4" /></button>] :
                                             <span className="text-sm font-medium text-gray-600">No suggested tags</span>
                                     }
                                 </td>
